@@ -2,7 +2,7 @@ from django.forms import ValidationError
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from reviews.models import User
+from reviews.models import User, Review, Comment
 
 
 class EmailSerializer(serializers.ModelSerializer):
@@ -70,3 +70,28 @@ class SignUpSerializer(serializers.Serializer):
                 f'Регистрация с именем пользователя {value} запрещена!'
             )
         return value
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+
+    def validate_score(self, score):
+        if not 1 <= score <= 10:
+            raise serializers.ValidationError("Оценка должна быть от 1 до 10.")
+        return score
+
+    class Meta:
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        model = Review
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username'
+    )
+
+    class Meta:
+        fields = ('id', 'text', 'author', 'pub_date')
+        model = Comment

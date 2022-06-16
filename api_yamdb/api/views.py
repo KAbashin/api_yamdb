@@ -4,21 +4,27 @@ from django.core.mail import send_mail
 from rest_framework.generics import get_object_or_404
 from rest_framework import filters, permissions, status, viewsets, mixins
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
+
+from reviews.models import User, Title, Review, Comment
 from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from reviews.models import User
 from .permissions import IsAdmin
 from .serializers import (
     ConfirmationCodeSerializer,
     EmailSerializer,
-    UserSerializer,
+    SignUpSerializer,
     UserInfoSerializer,
-    SignUpSerializer
+    UserSerializer,
+    CommentSerializer,
+    ReviewSerializer,
 )
 
 
@@ -117,3 +123,42 @@ class UserViewSet(viewsets.ModelViewSet):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ReviewsViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
+    def get_queryset(self):
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        queryset = title.reviews.all()
+        return queryset
+
+    def perform_create(self, serializer):
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        user = self.request.user
+        # review = Review.objects.filter(user_id=user.id, title_id=title.id)
+        # if review.exists():
+        #     raise ValidationError('Вы уже оставили Ваш отзыв!')
+        serializer.save(author=user, title=title)
+
+    def perform_update(self, serializer):
+        super(ReviewsViewSet, self).perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        super(ReviewsViewSet, self).perform_destroy(instance)
+
+
+class CommentsViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
+    def get_queryset(self):
+        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
+        queryset = review.comments.all()
+        return queryset
+
+    def perform_create(self, serializer):
+        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
+        user = self.request.user
+        serializer.save(author=user, review=review)
