@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
@@ -6,13 +7,19 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import User
-from .permissions import IsAdmin
+from api.mixins import CreateListDestroyViewSet
+from .filters import TitleFilter
+from reviews.models import User, Category, Genre, Title
+from .permissions import IsAdmin, AdminOrReadOnly
 from .serializers import (
     ConfirmationCodeSerializer,
     EmailSerializer,
     UserMeSerializer,
     UserSerializer,
+    CategorySerializer,
+    GenreSerializer,
+    TitleSerializer,
+    ReadTitleSerializer
 )
 
 
@@ -113,3 +120,34 @@ class UserViewSet(viewsets.ModelViewSet):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+#Гриша
+class CategoryViewSet(CreateListDestroyViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+    permission_classes = (AdminOrReadOnly,)
+ 
+ 
+class GenreViewSet(CreateListDestroyViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+    permission_classes = (AdminOrReadOnly,)
+ 
+ 
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    filter_backends = (filters.SearchFilter,)
+    filterset_class = TitleFilter
+    permission_classes = (AdminOrReadOnly,)
+ 
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return TitleSerializer
+        return ReadTitleSerializer
