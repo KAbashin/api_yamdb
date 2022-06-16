@@ -1,18 +1,24 @@
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404
-from rest_framework import filters, permissions, status, viewsets
+from rest_framework.generics import get_object_or_404
+from rest_framework import filters, permissions, status, viewsets, mixins
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import AccessToken
 
+from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from reviews.models import User
 from .permissions import IsAdmin
 from .serializers import (
     ConfirmationCodeSerializer,
     EmailSerializer,
-    UserMeSerializer,
     UserSerializer,
+    UserInfoSerializer,
+    SignUpSerializer
 )
 
 
@@ -47,9 +53,7 @@ def send_confirmation_code(request):
                 subject='Код подтверждения',
                 message=str(token),
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[
-                    email,
-                ],
+                recipient_list=[email,],
             )
             return Response(
                 resp,
@@ -60,10 +64,10 @@ def send_confirmation_code(request):
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def send_token(request):
-    serialezer = ConfirmationCodeSerializer(data=request.data)
-    serialezer.is_valid(raise_exception=True)
-    confirmation_code = serialezer.validated_data.get('confirmation_code')
-    username = serialezer.validated_data.get('username')
+    serializer = ConfirmationCodeSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    confirmation_code = serializer.validated_data.get('confirmation_code')
+    username = serializer.validated_data.get('username')
     user = get_object_or_404(User, username=username)
     if not confirmation_code:
         return Response(

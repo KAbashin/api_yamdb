@@ -1,14 +1,16 @@
 from django.urls import include, path
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import SimpleRouter
 
-from .views import UserViewSet, send_confirmation_code, send_token
+from .views import UserViewSet, SignUp, GetToken
 
-router_v1 = DefaultRouter()
+# app_name = "api"
 
-router_v1.register('users', UserViewSet, basename="users")
+router_v1 = SimpleRouter()
+
+router_v1.register(r'users', UserViewSet)  # , basename="users"
 
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
-    path('v1/auth/token/', send_confirmation_code),
-    path('v1/auth/signup/', send_token)
+    path('v1/auth/token/', GetToken.as_view()),
+    path('v1/auth/signup/', SignUp.as_view()),
 ]

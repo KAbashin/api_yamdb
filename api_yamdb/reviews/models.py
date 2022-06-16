@@ -32,8 +32,9 @@ class User(AbstractUser):
         null=True
     )
     email = models.EmailField(
-        verbose_name='email address',
+        verbose_name='email',
         unique=True,
+        blank=False,
         null=False,
         max_length=254)
     bio = models.TextField(
@@ -46,7 +47,7 @@ class User(AbstractUser):
         verbose_name='Роль',
         choices=ROLE_CHOICE,
         default=USER,
-        max_length=9
+        max_length=10
     )
 
     is_active = models.BooleanField(default=True)
@@ -54,27 +55,34 @@ class User(AbstractUser):
     is_superuser = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ["date_joined"]
+        ordering = ('-pk',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+
+    REQUIRED_FIELDS = ["email"]
+    USERNAME_FIELDS = "email"
 
     def __str__(self):
         return f'{self.username}: {self.email}, уровень доступа: {self.role}'
 
     @property
     def is_admin(self):
-        if self.role == self.ADMIN or self.is_superuser:
-            return True
-        return False
+        return self.role == self.ADMIN or self.is_superuser
+
+    #       if self.role == self.ADMIN or self.is_superuser:
+    #           return True
+    #       return False
 
     @property
     def is_moderator(self):
-        if self.role == self.MODERATOR:
-            return True
-        return False
+        return self.role == self.MODERATOR
+        # if self.role == self.MODERATOR:
+        #     return True
+        # return False
 
     @property
     def is_user(self):
-        if self.role == self.USER:
-            return True
-        return False
+        return self.role == self.USER
+        # if self.role == self.USER:
+        #     return True
+        # return False
