@@ -14,7 +14,7 @@ from .views import (CommentsViewSet,
 
 router_v1 = DefaultRouter()
 
-router_v1.register('users', UserViewSet, basename="users")
+router_v1.register('users', UserViewSet) #, basename="users"
 router_v1.register(r'titles/(?P<title_id>\d+)/reviews', ReviewsViewSet,
                    basename='reviews')
 router_v1.register(

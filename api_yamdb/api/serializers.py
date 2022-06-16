@@ -5,13 +5,12 @@ from rest_framework.validators import UniqueValidator
 from reviews.models import User, Category, Genre, Title, Review, Comment
 
 
+# class EmailSerializer(serializers.ModelSerializer):
+#    username = serializers.CharField(required=True)
+#    email = serializers.EmailField(required=True)
 
-class EmailSerializer(serializers.ModelSerializer):
-    #    username = serializers.CharField(required=True)
-    email = serializers.EmailField(required=True)
 
-
-class ConfirmationCodeSerializer(serializers.Serializer):
+class CodeSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)
 
@@ -99,13 +98,13 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-     class Meta:
+    class Meta:
         model = Category
         exclude = ('id',)
 
 
 class GenreSerializer(serializers.ModelSerializer):
-     class Meta:
+    class Meta:
         model = Genre
         exclude = ('id',)
 
@@ -117,6 +116,7 @@ class TitleSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(), slug_field='slug'
     )
+
     class Meta:
         model = Title
         fields = ('id', 'name', 'year', 'description',
@@ -127,6 +127,7 @@ class ReadTitleSerializer(serializers.ModelSerializer):
     rating = serializers.IntegerField(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
     category = CategorySerializer(read_only=True)
+
     class Meta:
         model = Title
         fields = ('id', 'name', 'year', 'description',
