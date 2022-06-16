@@ -1,21 +1,31 @@
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404
-from rest_framework import filters, permissions, status, viewsets
+from rest_framework.generics import get_object_or_404
+from rest_framework import filters, permissions, status, viewsets, mixins
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import AccessToken
 
-
-from reviews.models import User, Title, Review, Comment
-from .permissions import IsAdmin
+from api.mixins import CreateListDestroyViewSet
+from .filters import TitleFilter
+from reviews.models import User, Category, Genre, Title
+from .permissions import IsAdmin, AdminOrReadOnly
 from .serializers import (
     ConfirmationCodeSerializer,
     EmailSerializer,
-    UserMeSerializer,
+    SignUpSerializer,
+    UserInfoSerializer,
     UserSerializer,
+    CategorySerializer,
+    GenreSerializer,
+    TitleSerializer,
+    ReadTitleSerializer
     CommentSerializer,
     ReviewSerializer,
 )
@@ -52,9 +62,7 @@ def send_confirmation_code(request):
                 subject='Код подтверждения',
                 message=str(token),
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[
-                    email,
-                ],
+                recipient_list=[email,],
             )
             return Response(
                 resp,
@@ -65,10 +73,10 @@ def send_confirmation_code(request):
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def send_token(request):
-    serialezer = ConfirmationCodeSerializer(data=request.data)
-    serialezer.is_valid(raise_exception=True)
-    confirmation_code = serialezer.validated_data.get('confirmation_code')
-    username = serialezer.validated_data.get('username')
+    serializer = ConfirmationCodeSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    confirmation_code = serializer.validated_data.get('confirmation_code')
+    username = serializer.validated_data.get('username')
     user = get_object_or_404(User, username=username)
     if not confirmation_code:
         return Response(
@@ -118,6 +126,37 @@ class UserViewSet(viewsets.ModelViewSet):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+#Гриша
+class CategoryViewSet(CreateListDestroyViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+    permission_classes = (AdminOrReadOnly,)
+
+
+class GenreViewSet(CreateListDestroyViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+    permission_classes = (AdminOrReadOnly,)
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    filter_backends = (filters.SearchFilter,)
+    filterset_class = TitleFilter
+    permission_classes = (AdminOrReadOnly,)
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return TitleSerializer
+        return ReadTitleSerializer
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
