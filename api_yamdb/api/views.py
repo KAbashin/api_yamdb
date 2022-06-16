@@ -12,17 +12,20 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
-
-from reviews.models import User, Title, Review, Comment
-from api_yamdb.settings import DEFAULT_FROM_EMAIL
-from reviews.models import User
-from .permissions import IsAdmin
+from api.mixins import CreateListDestroyViewSet
+from .filters import TitleFilter
+from reviews.models import User, Category, Genre, Title
+from .permissions import IsAdmin, AdminOrReadOnly
 from .serializers import (
     ConfirmationCodeSerializer,
     EmailSerializer,
     SignUpSerializer,
     UserInfoSerializer,
     UserSerializer,
+    CategorySerializer,
+    GenreSerializer,
+    TitleSerializer,
+    ReadTitleSerializer
     CommentSerializer,
     ReviewSerializer,
 )
@@ -123,6 +126,37 @@ class UserViewSet(viewsets.ModelViewSet):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+#Гриша
+class CategoryViewSet(CreateListDestroyViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+    permission_classes = (AdminOrReadOnly,)
+
+
+class GenreViewSet(CreateListDestroyViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+    permission_classes = (AdminOrReadOnly,)
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    filter_backends = (filters.SearchFilter,)
+    filterset_class = TitleFilter
+    permission_classes = (AdminOrReadOnly,)
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return TitleSerializer
+        return ReadTitleSerializer
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
