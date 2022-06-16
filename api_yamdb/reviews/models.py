@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.db.models import UniqueConstraint
 
 
 class User(AbstractUser):
@@ -106,6 +107,7 @@ class Review(models.Model):
         ordering = ["-pub_date"]
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+        UniqueConstraint(fields=['title', 'author'], name='unique_review')
 
     def __str__(self):
         return f'{self.title}, {self.score}, {self.author}'
