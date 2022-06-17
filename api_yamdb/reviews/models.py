@@ -134,6 +134,7 @@ class Title(models.Model):
         null=True,
         verbose_name='Описание'
     )
+    year = models.IntegerField(null=True, blank=True, db_index=True)
     genre = models.ManyToManyField(
         Genre,
         db_index=True,
@@ -153,6 +154,12 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def rating(self):
+        reviews = self.reviews.all()
+        score_avg = reviews.aggregate(models.Avg('score')).get('score__avg')
+        return None if isinstance(score_avg, type(None)) else int(score_avg)
 
 
 class Review(models.Model):
@@ -180,6 +187,12 @@ class Review(models.Model):
         ordering = ["-pub_date"]
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+        constraints = (
+            models.UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_author_title'
+            ),
+        )
 
     def __str__(self):
         return f'{self.title}, {self.score}, {self.author}'

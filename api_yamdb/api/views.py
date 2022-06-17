@@ -1,6 +1,6 @@
-from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework import filters, permissions, status, viewsets, mixins
 from rest_framework.decorators import action, api_view, permission_classes
@@ -16,7 +16,7 @@ from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from reviews.models import User, Category, Genre, Title, Review
 from .mixins import CreateListDestroyViewSet
 from .filters import TitleFilter
-from .permissions import IsAdmin, AdminOrReadOnly
+from .permissions import IsAdmin, AdminOrReadOnly, UserModeratorAdminOrReadOnly
 from .serializers import (
     SignUpSerializer,
     CodeSerializer,
@@ -55,6 +55,7 @@ class SignUp(APIView):
                 status=status.HTTP_200_OK
             )
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
 class GetToken(APIView):
     permission_classes = (AllowAny,)
@@ -142,7 +143,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (UserModeratorAdminOrReadOnly,)
 
     def get_queryset(self):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
@@ -152,21 +153,15 @@ class ReviewsViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
         user = self.request.user
-        # review = Review.objects.filter(user_id=user.id, title_id=title.id)
-        # if review.exists():
-        #     raise ValidationError('Вы уже оставили Ваш отзыв!')
+        review = title.reviews.filter(author_id=user.id, title_id=title.id)
+        if review.exists():
+            raise ValidationError('Вы уже оставили Ваш отзыв!')
         serializer.save(author=user, title=title)
-
-    def perform_update(self, serializer):
-        super(ReviewsViewSet, self).perform_update(serializer)
-
-    def perform_destroy(self, instance):
-        super(ReviewsViewSet, self).perform_destroy(instance)
 
 
 class CommentsViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (UserModeratorAdminOrReadOnly,)
 
     def get_queryset(self):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
