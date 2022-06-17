@@ -5,11 +5,6 @@ from rest_framework.validators import UniqueValidator
 from reviews.models import User, Category, Genre, Title, Review, Comment
 
 
-# class EmailSerializer(serializers.ModelSerializer):
-#    username = serializers.CharField(required=True)
-#    email = serializers.EmailField(required=True)
-
-
 class CodeSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)
@@ -38,20 +33,6 @@ class UserSerializer(serializers.ModelSerializer):
                 f'Регистрация с именем пользователя {value} запрещена!'
             )
         return value
-
-
-class UserInfoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            'username',
-            'role',
-            'email',
-            'first_name',
-            'last_name',
-            'bio'
-        ]
-        read_only_fields = ('role',)
 
 
 class SignUpSerializer(serializers.Serializer):
