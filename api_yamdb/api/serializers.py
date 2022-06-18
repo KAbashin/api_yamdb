@@ -1,13 +1,9 @@
 from django.forms import ValidationError
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from reviews.models import User, Category, Genre, Title, Review, Comment
-
-
-# class EmailSerializer(serializers.ModelSerializer):
-#    username = serializers.CharField(required=True)
-#    email = serializers.EmailField(required=True)
 
 
 class CodeSerializer(serializers.Serializer):
@@ -40,20 +36,6 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
 
-class UserInfoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            'username',
-            'role',
-            'email',
-            'first_name',
-            'last_name',
-            'bio'
-        ]
-        read_only_fields = ('role',)
-
-
 class SignUpSerializer(serializers.Serializer):
     email = serializers.EmailField(
         required=True,
@@ -77,14 +59,21 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True, slug_field='username'
     )
 
-    def validate_score(self, score):
-        if not 1 <= score <= 10:
-            raise serializers.ValidationError("Оценка должна быть от 1 до 10.")
-        return score
-
     class Meta:
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         model = Review
+
+    def validate(self, data):
+        if self.context.get('request').method != 'POST':
+            return data
+        author = self.context['request'].user.id
+        title_id = self.context['view'].kwargs.get('title_id')
+        title = get_object_or_404(Title, pk=title_id)
+        if Review.objects.filter(title=title, author=author).exists():
+            raise ValidationError(
+                'Вы уже оставили Ваш отзыв!'
+            )
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -119,7 +108,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'description',
+        fields = ('id', 'name', 'year', 'rating', 'description',
                   'genre', 'category')
 
 
@@ -130,5 +119,5 @@ class ReadTitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'description',
-                  'genre', 'category', 'rating',)
+        fields = ('id', 'name', 'year', 'rating', 'description',
+                  'genre', 'category')
