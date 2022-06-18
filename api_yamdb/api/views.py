@@ -130,8 +130,7 @@ class UserViewSet(viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         if self.request.user.role == (user.ADMIN
-                                      or self.request.user.is_superuser
-        ):
+                                      or self.request.user.is_superuser):
             serializer.save()
         else:
             serializer.save(role=user.role)

@@ -3,7 +3,6 @@ import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-
 from reviews.models import Category, Title, Genre, Review, Comment, User
 
 
@@ -11,7 +10,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        file_path = os.path.join(settings.BASE_DIR, 'static/data', 'category.csv')
+        file_path = os.path.join(settings.BASE_DIR, 'static/data',
+                                 'category.csv')
 
         with open(file_path, encoding="utf-8") as f:
             reader = csv.reader(f)
@@ -41,7 +41,8 @@ class Command(BaseCommand):
                 )
             f.close()
 
-        file_path = os.path.join(settings.BASE_DIR, 'static/data', 'titles.csv')
+        file_path = os.path.join(settings.BASE_DIR, 'static/data',
+                                 'titles.csv')
 
         with open(file_path, encoding="utf-8") as f:
             reader = csv.reader(f)
@@ -77,7 +78,8 @@ class Command(BaseCommand):
                 )
             f.close()
 
-        file_path = os.path.join(settings.BASE_DIR, 'static/data', 'review.csv')
+        file_path = os.path.join(settings.BASE_DIR, 'static/data',
+                                 'review.csv')
 
         with open(file_path, encoding="utf-8") as f:
             reader = csv.reader(f)
@@ -95,7 +97,8 @@ class Command(BaseCommand):
                 )
             f.close()
 
-        file_path = os.path.join(settings.BASE_DIR, 'static/data', 'comments.csv')
+        file_path = os.path.join(settings.BASE_DIR, 'static/data',
+                                 'comments.csv')
 
         with open(file_path, encoding="utf-8") as f:
             reader = csv.reader(f)
@@ -112,7 +115,8 @@ class Command(BaseCommand):
                 )
             f.close()
 
-        file_path = os.path.join(settings.BASE_DIR, 'static/data', 'genre_title.csv')
+        file_path = os.path.join(settings.BASE_DIR, 'static/data',
+                                 'genre_title.csv')
 
         with open(file_path, encoding="utf-8") as f:
             reader = csv.reader(f)
