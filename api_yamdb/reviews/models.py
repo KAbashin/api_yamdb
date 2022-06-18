@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 
@@ -32,8 +33,9 @@ class User(AbstractUser):
         null=True
     )
     email = models.EmailField(
-        verbose_name='email address',
+        verbose_name='email',
         unique=True,
+        blank=False,
         null=False,
         max_length=254)
     bio = models.TextField(
@@ -46,7 +48,7 @@ class User(AbstractUser):
         verbose_name='Роль',
         choices=ROLE_CHOICE,
         default=USER,
-        max_length=9
+        max_length=10
     )
 
     is_active = models.BooleanField(default=True)
@@ -54,30 +56,37 @@ class User(AbstractUser):
     is_superuser = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ["date_joined"]
+        ordering = ('-pk',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+
+    REQUIRED_FIELDS = ["email"]
+    USERNAME_FIELDS = "email"
 
     def __str__(self):
         return f'{self.username}: {self.email}, уровень доступа: {self.role}'
 
     @property
     def is_admin(self):
-        if self.role == self.ADMIN or self.is_superuser:
-            return True
-        return False
+        return self.role == self.ADMIN or self.is_superuser
+
+    #       if self.role == self.ADMIN or self.is_superuser:
+    #           return True
+    #       return False
 
     @property
     def is_moderator(self):
-        if self.role == self.MODERATOR:
-            return True
-        return False
+        return self.role == self.MODERATOR
+        # if self.role == self.MODERATOR:
+        #     return True
+        # return False
 
     @property
     def is_user(self):
-        if self.role == self.USER:
-            return True
-        return False
+        return self.role == self.USER
+        # if self.role == self.USER:
+        #     return True
+        # return False
 
 class Category(models.Model):
     name = models.CharField(
@@ -118,7 +127,7 @@ class Genre(models.Model):
 class Title(models.Model):
     name = models.CharField(
         max_length=200,
-        verbose_name='Навзвание произведения'
+        verbose_name='Название произведения'
     )
     description = models.TextField(
         blank=True,
@@ -144,3 +153,59 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Review(models.Model):
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+    text = models.TextField()
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+    )
+    score = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1),
+                    MaxValueValidator(10)]
+    )
+    pub_date = models.DateTimeField(
+        verbose_name='Дата публикации',
+        auto_now_add=True
+    )
+
+    class Meta:
+        ordering = ["-pub_date"]
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+
+    def __str__(self):
+        return f'{self.title}, {self.score}, {self.author}'
+
+
+class Comment(models.Model):
+    review = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    text = models.TextField()
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments',
+    )
+    pub_date = models.DateTimeField(
+        verbose_name='Дата публикации',
+        auto_now_add=True
+    )
+
+    class Meta:
+        ordering = ["-pub_date"]
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        return f'{self.author}, {self.pub_date:%d.%m.%Y}, {self.text}'
