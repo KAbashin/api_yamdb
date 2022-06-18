@@ -70,23 +70,14 @@ class User(AbstractUser):
     def is_admin(self):
         return self.role == self.ADMIN or self.is_superuser
 
-    #       if self.role == self.ADMIN or self.is_superuser:
-    #           return True
-    #       return False
-
     @property
     def is_moderator(self):
         return self.role == self.MODERATOR
-        # if self.role == self.MODERATOR:
-        #     return True
-        # return False
 
     @property
     def is_user(self):
         return self.role == self.USER
-        # if self.role == self.USER:
-        #     return True
-        # return False
+
 
 class Category(models.Model):
     name = models.CharField(
@@ -161,7 +152,7 @@ class Title(models.Model):
         score_avg = reviews.aggregate(models.Avg('score')).get('score__avg')
         return None if isinstance(score_avg, type(None)) else int(score_avg)
 
-      
+
 class Review(models.Model):
     title = models.ForeignKey(
         Title,

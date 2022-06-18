@@ -1,22 +1,21 @@
-from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import AllowAny
-
 from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets, permissions
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import (LimitOffsetPagination)
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import User, Category, Genre, Title, Review
 
 from .filters import TitleFilter
-from .permissions import IsAdmin, AdminOrReadOnly, UserModeratorAdminOrReadOnly
 from .mixins import CreateListDestroyViewSet
+from .permissions import IsAdmin, AdminOrReadOnly, UserModeratorAdminOrReadOnly
 from .serializers import (
     SignUpSerializer,
     CodeSerializer,
@@ -55,6 +54,7 @@ class SignUp(APIView):
             )
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
+
 class GetToken(APIView):
     permission_classes = (AllowAny,)
 
@@ -78,7 +78,7 @@ class GetToken(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-  
+
 class GetToken(APIView):
     permission_classes = (permissions.AllowAny,)
 
@@ -140,7 +140,6 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK)
 
 
-# Гриша
 class CategoryViewSet(CreateListDestroyViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
