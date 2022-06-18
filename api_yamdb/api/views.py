@@ -2,6 +2,7 @@ from rest_framework.exceptions import ValidationError
 from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -52,7 +53,30 @@ class SignUp(APIView):
             )
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
+class GetToken(APIView):
+    permission_classes = (AllowAny,)
 
+    def post(self, request):
+        serializer = CodeSerializer(data=request.data)
+        if serializer.is_valid():
+            user = get_object_or_404(
+                User,
+                username=serializer.data.get('username')
+            )
+            confirmation_code = serializer.data.get('confirmation_code')
+            if default_token_generator.check_token(user, confirmation_code):
+                token = AccessToken.for_user(user)
+                return Response(
+                    {'Ваш токен доступа к API': str(token)},
+                    status=status.HTTP_200_OK
+                )
+            return Response(
+                'Неверный токен доступа',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+  
 class GetToken(APIView):
     permission_classes = (permissions.AllowAny,)
 
@@ -136,7 +160,7 @@ class GenreViewSet(CreateListDestroyViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    filter_backends = (filters.SearchFilter,)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
     permission_classes = (AdminOrReadOnly,)
 

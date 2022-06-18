@@ -161,7 +161,7 @@ class Title(models.Model):
         score_avg = reviews.aggregate(models.Avg('score')).get('score__avg')
         return None if isinstance(score_avg, type(None)) else int(score_avg)
 
-
+      
 class Review(models.Model):
     title = models.ForeignKey(
         Title,
