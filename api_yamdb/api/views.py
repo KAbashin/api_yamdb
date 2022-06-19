@@ -6,7 +6,7 @@ from rest_framework import filters, status, viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
-from rest_framework.pagination import (LimitOffsetPagination)
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -60,47 +60,22 @@ class GetToken(APIView):
 
     def post(self, request):
         serializer = CodeSerializer(data=request.data)
-        if serializer.is_valid():
-            user = get_object_or_404(
-                User,
-                username=serializer.data.get('username')
-            )
-            confirmation_code = serializer.data.get('confirmation_code')
-            if default_token_generator.check_token(user, confirmation_code):
-                token = AccessToken.for_user(user)
-                return Response(
-                    {'Ваш токен доступа к API': str(token)},
-                    status=status.HTTP_200_OK
-                )
+        serializer.is_valid(raise_exception=True)
+        user = get_object_or_404(
+            User,
+            username=serializer.data.get('username')
+        )
+        confirmation_code = serializer.data.get('confirmation_code')
+        if default_token_generator.check_token(user, confirmation_code):
+            token = AccessToken.for_user(user)
             return Response(
-                'Неверный токен доступа',
-                status=status.HTTP_400_BAD_REQUEST
+                {'Ваш токен доступа к API': str(token)},
+                status=status.HTTP_200_OK
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class GetToken(APIView):
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request):
-        serializer = CodeSerializer(data=request.data)
-        if serializer.is_valid():
-            user = get_object_or_404(
-                User,
-                username=serializer.data.get('username')
-            )
-            confirmation_code = serializer.data.get('confirmation_code')
-            if default_token_generator.check_token(user, confirmation_code):
-                token = AccessToken.for_user(user)
-                return Response(
-                    {'Ваш токен доступа к API': str(token)},
-                    status=status.HTTP_200_OK
-                )
-            return Response(
-                'Неверный токен доступа',
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            'Неверный токен доступа',
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -176,8 +151,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-        queryset = title.reviews.all()
-        return queryset
+        return title.reviews.all()
 
     def perform_create(self, serializer):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
@@ -200,6 +174,7 @@ class CommentsViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
+        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'),
+                                   title_id=self.kwargs.get('title_id'))
         user = self.request.user
         serializer.save(author=user, review=review)

@@ -51,10 +51,6 @@ class User(AbstractUser):
         max_length=10
     )
 
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
-
     class Meta:
         ordering = ('-pk',)
         verbose_name = 'Пользователь'
@@ -90,6 +86,7 @@ class Category(models.Model):
     )
 
     class Meta:
+        ordering = ['name']
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
@@ -108,6 +105,7 @@ class Genre(models.Model):
     )
 
     class Meta:
+        ordering = ['name']
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
@@ -140,6 +138,7 @@ class Title(models.Model):
     )
 
     class Meta:
+        ordering = ['name']
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
 
